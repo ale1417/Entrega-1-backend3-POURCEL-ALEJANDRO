@@ -1,0 +1,16 @@
+{
+  "name": "pourcel-programacion-backend-i-entrega-2-completa",
+  "version": "1.0.0",
+  "description": "CoderHouse - Programación Backend I - Entrega 2 con Handlebars y Socket.IO",
+  "main": "src/app.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "node --watch src/app.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "express-handlebars": "^8.0.1",
+    "socket.io": "^4.8.1"
+  }
+}

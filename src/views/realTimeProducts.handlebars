@@ -1,0 +1,54 @@
+<section>
+  <h2>Productos en tiempo real</h2>
+
+  <div id="message" class="message"></div>
+
+  <div class="two-columns">
+    <section class="panel">
+      <h3>Crear producto</h3>
+      <form id="createProductForm">
+        <input type="text" name="title" placeholder="Título" required />
+        <input type="text" name="description" placeholder="Descripción" required />
+        <input type="text" name="code" placeholder="Código único" required />
+        <input type="number" name="price" placeholder="Precio" required />
+        <select name="status" required>
+          <option value="true">Activo</option>
+          <option value="false">Inactivo</option>
+        </select>
+        <input type="number" name="stock" placeholder="Stock" required />
+        <input type="text" name="category" placeholder="Categoría" required />
+        <input type="text" name="thumbnails" placeholder="Thumbnails separadas por coma" />
+        <button type="submit">Crear producto</button>
+      </form>
+    </section>
+
+    <section class="panel">
+      <h3>Eliminar producto</h3>
+      <form id="deleteProductForm">
+        <input type="text" name="pid" placeholder="ID del producto" required />
+        <button type="submit" class="danger">Eliminar producto</button>
+      </form>
+    </section>
+  </div>
+
+  <section class="panel">
+    <h3>Listado actualizado</h3>
+    <div id="productsContainer" class="grid">
+      {{#each products}}
+        <article class="card">
+          <h4>{{this.title}}</h4>
+          <p><strong>ID:</strong> {{this.id}}</p>
+          <p><strong>Descripción:</strong> {{this.description}}</p>
+          <p><strong>Código:</strong> {{this.code}}</p>
+          <p><strong>Precio:</strong> ${{this.price}}</p>
+          <p><strong>Stock:</strong> {{this.stock}}</p>
+          <p><strong>Categoría:</strong> {{this.category}}</p>
+          <p><strong>Status:</strong> {{this.status}}</p>
+        </article>
+      {{/each}}
+    </div>
+  </section>
+</section>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="/js/realtime.js"></script>

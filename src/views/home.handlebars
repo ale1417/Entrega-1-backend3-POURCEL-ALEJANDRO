@@ -1,0 +1,22 @@
+<section>
+  <h2>Listado de productos</h2>
+
+  {{#if products.length}}
+    <div class="grid">
+      {{#each products}}
+        <article class="card">
+          <h3>{{this.title}}</h3>
+          <p><strong>ID:</strong> {{this.id}}</p>
+          <p><strong>Descripción:</strong> {{this.description}}</p>
+          <p><strong>Código:</strong> {{this.code}}</p>
+          <p><strong>Precio:</strong> ${{this.price}}</p>
+          <p><strong>Stock:</strong> {{this.stock}}</p>
+          <p><strong>Categoría:</strong> {{this.category}}</p>
+          <p><strong>Status:</strong> {{this.status}}</p>
+        </article>
+      {{/each}}
+    </div>
+  {{else}}
+    <p>No hay productos cargados todavía.</p>
+  {{/if}}
+</section>
