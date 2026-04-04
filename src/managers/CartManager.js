@@ -1,70 +1,100 @@
-import { promises as fs } from "fs";
-import path from "path";
+import { Cart } from "../models/Cart.model.js";
+import { Product } from "../models/Product.model.js";
 
 export default class CartManager {
-  constructor(filePath) {
-    this.path = filePath;
-  }
-
-  async #ensureFile() {
-    try {
-      await fs.access(this.path);
-    } catch {
-      await fs.mkdir(path.dirname(this.path), { recursive: true });
-      await fs.writeFile(this.path, "[]", "utf-8");
-    }
-  }
-
-  async #readFile() {
-    await this.#ensureFile();
-    const data = await fs.readFile(this.path, "utf-8");
-    return JSON.parse(data || "[]");
-  }
-
-  async #writeFile(data) {
-    await this.#ensureFile();
-    await fs.writeFile(this.path, JSON.stringify(data, null, 2), "utf-8");
-  }
-
-  #generateId(carts) {
-    const maxId = carts.reduce((max, c) => {
-      const n = Number(c.id);
-      return Number.isNaN(n) ? max : Math.max(max, n);
-    }, 0);
-    return String(maxId + 1);
-  }
+  constructor() {}
 
   async createCart() {
-    const carts = await this.#readFile();
-    const newCart = { id: this.#generateId(carts), products: [] };
-    carts.push(newCart);
-    await this.#writeFile(carts);
+    const newCart = await Cart.create({ products: [] });
     return newCart;
   }
 
   async getCartById(cid) {
-    const carts = await this.#readFile();
-    return carts.find((c) => String(c.id) === String(cid)) || null;
+    return await Cart.findById(cid).populate("products.product").lean();
   }
 
   async addProductToCart(cid, pid) {
-    const carts = await this.#readFile();
-    const cartIndex = carts.findIndex((c) => String(c.id) === String(cid));
-    if (cartIndex === -1) {
-      return null;
-    }
+    const cart = await Cart.findById(cid);
+    if (!cart) return null;
 
-    const cart = carts[cartIndex];
-    const prodIndex = cart.products.findIndex((p) => String(p.product) === String(pid));
+    const productExists = await Product.findById(pid);
+    if (!productExists) return false;
 
-    if (prodIndex === -1) {
-      cart.products.push({ product: String(pid), quantity: 1 });
+    const productIndex = cart.products.findIndex(
+      (item) => item.product.toString() === pid,
+    );
+
+    if (productIndex === -1) {
+      cart.products.push({ product: pid, quantity: 1 });
     } else {
-      cart.products[prodIndex].quantity += 1;
+      cart.products[productIndex].quantity += 1;
     }
 
-    carts[cartIndex] = cart;
-    await this.#writeFile(carts);
-    return cart;
+    await cart.save();
+    return await Cart.findById(cid).populate("products.product").lean();
+  }
+
+  async deleteProductFromCart(cid, pid) {
+    const cart = await Cart.findById(cid);
+    if (!cart) return null;
+
+    const initialLength = cart.products.length;
+
+    cart.products = cart.products.filter(
+      (item) => item.product.toString() !== pid,
+    );
+
+    if (cart.products.length === initialLength) {
+      return false;
+    }
+
+    await cart.save();
+    return await Cart.findById(cid).populate("products.product").lean();
+  }
+
+  async updateCart(cid, products) {
+    const cart = await Cart.findById(cid);
+    if (!cart) return null;
+
+    for (const item of products) {
+      const productExists = await Product.findById(item.product);
+      if (!productExists) {
+        throw new Error(`Product not found: ${item.product}`);
+      }
+    }
+
+    cart.products = products.map((item) => ({
+      product: item.product,
+      quantity: Number(item.quantity),
+    }));
+
+    await cart.save();
+    return await Cart.findById(cid).populate("products.product").lean();
+  }
+
+  async updateProductQuantity(cid, pid, quantity) {
+    const cart = await Cart.findById(cid);
+    if (!cart) return null;
+
+    const productIndex = cart.products.findIndex(
+      (item) => item.product.toString() === pid,
+    );
+
+    if (productIndex === -1) return false;
+
+    cart.products[productIndex].quantity = Number(quantity);
+
+    await cart.save();
+    return await Cart.findById(cid).populate("products.product").lean();
+  }
+
+  async clearCart(cid) {
+    const cart = await Cart.findById(cid);
+    if (!cart) return null;
+
+    cart.products = [];
+    await cart.save();
+
+    return await Cart.findById(cid).populate("products.product").lean();
   }
 }

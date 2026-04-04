@@ -1,46 +1,62 @@
-import { promises as fs } from "fs";
-import path from "path";
+import { Product } from "../models/Product.model.js";
 
 export default class ProductManager {
-  constructor(filePath) {
-    this.path = filePath;
-  }
+  constructor() {}
 
-  async #ensureFile() {
-    try {
-      await fs.access(this.path);
-    } catch {
-      await fs.mkdir(path.dirname(this.path), { recursive: true });
-      await fs.writeFile(this.path, "[]", "utf-8");
+  async getProducts({ limit = 10, page = 1, sort, query } = {}) {
+    const filters = {};
+
+    if (query) {
+      if (query === "true" || query === "false") {
+        filters.status = query === "true";
+      } else {
+        filters.category = query;
+      }
     }
+
+    let mongoQuery = Product.find(filters);
+
+    if (sort === "asc") {
+      mongoQuery = mongoQuery.sort({ price: 1 });
+    } else if (sort === "desc") {
+      mongoQuery = mongoQuery.sort({ price: -1 });
+    }
+
+    const pageNum = Number(page) || 1;
+    const limitNum = Number(limit) || 10;
+    const skip = (pageNum - 1) * limitNum;
+
+    const totalDocs = await Product.countDocuments(filters);
+    const totalPages = Math.ceil(totalDocs / limitNum) || 1;
+
+    const products = await mongoQuery.skip(skip).limit(limitNum).lean();
+
+    return {
+      status: "success",
+      payload: products,
+      totalPages,
+      prevPage: pageNum > 1 ? pageNum - 1 : null,
+      nextPage: pageNum < totalPages ? pageNum + 1 : null,
+      page: pageNum,
+      hasPrevPage: pageNum > 1,
+      hasNextPage: pageNum < totalPages,
+      prevLink:
+        pageNum > 1
+          ? `?page=${pageNum - 1}&limit=${limitNum}${sort ? `&sort=${sort}` : ""}${query ? `&query=${query}` : ""}`
+          : null,
+      nextLink:
+        pageNum < totalPages
+          ? `?page=${pageNum + 1}&limit=${limitNum}${sort ? `&sort=${sort}` : ""}${query ? `&query=${query}` : ""}`
+          : null,
+    };
   }
 
-  async #readFile() {
-    await this.#ensureFile();
-    const data = await fs.readFile(this.path, "utf-8");
-    return JSON.parse(data || "[]");
-  }
-
-  async #writeFile(data) {
-    await this.#ensureFile();
-    await fs.writeFile(this.path, JSON.stringify(data, null, 2), "utf-8");
-  }
-
-  #generateId(products) {
-    const maxId = products.reduce((max, p) => {
-      const n = Number(p.id);
-      return Number.isNaN(n) ? max : Math.max(max, n);
-    }, 0);
-    return String(maxId + 1);
-  }
-
-  async getProducts() {
-    return await this.#readFile();
+  async getAllProductsRaw() {
+    return await Product.find().lean();
   }
 
   async getProductById(id) {
-    const products = await this.#readFile();
-    return products.find((p) => String(p.id) === String(id)) || null;
+    return await Product.findById(id).lean();
   }
 
   async addProduct(productData) {
@@ -52,7 +68,7 @@ export default class ProductManager {
       "status",
       "stock",
       "category",
-      "thumbnails"
+      "thumbnails",
     ];
 
     for (const field of required) {
@@ -65,59 +81,55 @@ export default class ProductManager {
       throw new Error("thumbnails must be an array of strings");
     }
 
-    const products = await this.#readFile();
-    const codeExists = products.some((p) => p.code === productData.code);
+    const codeExists = await Product.findOne({ code: productData.code });
     if (codeExists) {
       throw new Error("code must be unique");
     }
 
-    const newProduct = {
-      id: this.#generateId(products),
+    const newProduct = await Product.create({
       title: productData.title,
       description: productData.description,
       code: productData.code,
       price: Number(productData.price),
-      status: productData.status === "false" ? false : Boolean(productData.status),
+      status:
+        productData.status === "false" ? false : Boolean(productData.status),
       stock: Number(productData.stock),
       category: productData.category,
-      thumbnails: productData.thumbnails
-    };
+      thumbnails: productData.thumbnails,
+    });
 
-    products.push(newProduct);
-    await this.#writeFile(products);
     return newProduct;
   }
 
   async updateProduct(id, updates) {
-    const products = await this.#readFile();
-    const index = products.findIndex((p) => String(p.id) === String(id));
-    if (index === -1) {
-      return null;
+    const { _id, id: ignoredId, ...safeUpdates } = updates;
+
+    if (safeUpdates.price !== undefined) {
+      safeUpdates.price = Number(safeUpdates.price);
     }
 
-    const { id: _ignored, ...safeUpdates } = updates;
-    const updated = { ...products[index], ...safeUpdates };
+    if (safeUpdates.stock !== undefined) {
+      safeUpdates.stock = Number(safeUpdates.stock);
+    }
 
-    if (safeUpdates.price !== undefined) updated.price = Number(safeUpdates.price);
-    if (safeUpdates.stock !== undefined) updated.stock = Number(safeUpdates.stock);
     if (safeUpdates.status !== undefined) {
-      updated.status = safeUpdates.status === "false" ? false : Boolean(safeUpdates.status);
+      safeUpdates.status =
+        safeUpdates.status === "false" ? false : Boolean(safeUpdates.status);
     }
 
-    products[index] = updated;
-    await this.#writeFile(products);
+    const updated = await Product.findByIdAndUpdate(id, safeUpdates, {
+      new: true,
+      runValidators: true,
+    }).lean();
+
     return updated;
   }
 
   async deleteProduct(id) {
-    const products = await this.#readFile();
-    const index = products.findIndex((p) => String(p.id) === String(id));
-    if (index === -1) {
-      return false;
-    }
-
-    products.splice(index, 1);
-    await this.#writeFile(products);
-    return true;
+    const deleted = await Product.findByIdAndDelete(id);
+    return !!deleted;
+  }
+  async pingProducts() {
+    return await Product.find().limit(1).lean();
   }
 }

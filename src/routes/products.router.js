@@ -3,12 +3,12 @@ import path from "path";
 import ProductManager from "../managers/ProductManager.js";
 
 const router = Router();
-const manager = new ProductManager(path.resolve("src/data/products.json"));
+const manager = new ProductManager();
 
 router.get("/", async (req, res) => {
   try {
-    const products = await manager.getProducts();
-    res.json(products);
+    const result = await manager.getProducts(req.query);
+    res.json(result);
   } catch (err) {
     res.status(500).json({ error: "Internal error", detail: err.message });
   }
@@ -29,7 +29,7 @@ router.post("/", async (req, res) => {
     const created = await manager.addProduct(req.body);
 
     const io = req.app.get("io");
-    const updatedProducts = await manager.getProducts();
+    const updatedProducts = await manager.getAllProductsRaw();
     io.emit("productsUpdated", updatedProducts);
 
     res.status(201).json(created);
@@ -54,7 +54,7 @@ router.delete("/:pid", async (req, res) => {
     if (!ok) return res.status(404).json({ error: "Product not found" });
 
     const io = req.app.get("io");
-    const updatedProducts = await manager.getProducts();
+    const updatedProducts = await manager.getAllProductsRaw();
     io.emit("productsUpdated", updatedProducts);
 
     res.json({ status: "deleted" });

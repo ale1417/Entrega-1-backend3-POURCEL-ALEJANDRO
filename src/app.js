@@ -3,17 +3,24 @@ import { createServer } from "http";
 import { Server } from "socket.io";
 import { engine } from "express-handlebars";
 import path from "path";
+import mongoose from "mongoose";
+import dotenv from "dotenv";
+
 import productsRouter from "./routes/products.router.js";
 import cartsRouter from "./routes/carts.router.js";
 import viewsRouter from "./routes/views.router.js";
 import ProductManager from "./managers/ProductManager.js";
+import CartManager from "./managers/CartManager.js";
+
+dotenv.config();
 
 const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer);
 const PORT = 8080;
 
-const productManager = new ProductManager(path.resolve("src/data/products.json"));
+const productManager = new ProductManager();
+const cartManager = new CartManager();
 
 app.engine("handlebars", engine());
 app.set("view engine", "handlebars");
@@ -25,28 +32,34 @@ app.use(express.static(path.resolve("src/public")));
 
 app.set("io", io);
 app.set("productManager", productManager);
+app.set("cartManager", cartManager);
 
 app.use("/", viewsRouter);
 app.use("/api/products", productsRouter);
 app.use("/api/carts", cartsRouter);
 
 io.on("connection", async (socket) => {
-  const products = await productManager.getProducts();
-  socket.emit("productsUpdated", products);
+  try {
+    const products = await productManager.getAllProductsRaw();
+    socket.emit("productsUpdated", products);
+  } catch (error) {
+    console.log("Error al cargar productos por websocket:", error.message);
+  }
 
   socket.on("createProduct", async (productData) => {
     try {
       await productManager.addProduct(productData);
-      const updatedProducts = await productManager.getProducts();
+      const updatedProducts = await productManager.getAllProductsRaw();
       io.emit("productsUpdated", updatedProducts);
+
       socket.emit("operationResult", {
         success: true,
-        message: "Producto creado correctamente"
+        message: "Producto creado correctamente",
       });
     } catch (error) {
       socket.emit("operationResult", {
         success: false,
-        message: error.message
+        message: error.message,
       });
     }
   });
@@ -54,29 +67,47 @@ io.on("connection", async (socket) => {
   socket.on("deleteProduct", async (pid) => {
     try {
       const deleted = await productManager.deleteProduct(pid);
+
       if (!deleted) {
         socket.emit("operationResult", {
           success: false,
-          message: "Product not found"
+          message: "Product not found",
         });
         return;
       }
 
-      const updatedProducts = await productManager.getProducts();
+      const updatedProducts = await productManager.getAllProductsRaw();
       io.emit("productsUpdated", updatedProducts);
+
       socket.emit("operationResult", {
         success: true,
-        message: "Producto eliminado correctamente"
+        message: "Producto eliminado correctamente",
       });
     } catch (error) {
       socket.emit("operationResult", {
         success: false,
-        message: error.message
+        message: error.message,
       });
     }
   });
 });
 
-httpServer.listen(PORT, () => {
-  console.log(`Server listening on http://localhost:${PORT}`);
-});
+const startServer = async () => {
+  try {
+    console.log("Intentando conectar a Mongo...");
+
+    await mongoose.connect(process.env.MONGO_URL, {
+      serverSelectionTimeoutMS: 10000,
+    });
+
+    console.log("Mongo conectado");
+
+    httpServer.listen(PORT, () => {
+      console.log(`Server listening on http://localhost:${PORT}`);
+    });
+  } catch (error) {
+    console.error("Error al conectar con Mongo:", error.message);
+  }
+};
+
+startServer();

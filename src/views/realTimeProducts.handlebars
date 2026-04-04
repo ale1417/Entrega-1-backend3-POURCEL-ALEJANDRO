@@ -8,7 +8,12 @@
       <h3>Crear producto</h3>
       <form id="createProductForm">
         <input type="text" name="title" placeholder="Título" required />
-        <input type="text" name="description" placeholder="Descripción" required />
+        <input
+          type="text"
+          name="description"
+          placeholder="Descripción"
+          required
+        />
         <input type="text" name="code" placeholder="Código único" required />
         <input type="number" name="price" placeholder="Precio" required />
         <select name="status" required>
@@ -17,7 +22,11 @@
         </select>
         <input type="number" name="stock" placeholder="Stock" required />
         <input type="text" name="category" placeholder="Categoría" required />
-        <input type="text" name="thumbnails" placeholder="Thumbnails separadas por coma" />
+        <input
+          type="text"
+          name="thumbnails"
+          placeholder="Thumbnails separadas por coma"
+        />
         <button type="submit">Crear producto</button>
       </form>
     </section>
@@ -37,7 +46,7 @@
       {{#each products}}
         <article class="card">
           <h4>{{this.title}}</h4>
-          <p><strong>ID:</strong> {{this.id}}</p>
+          <p><strong>ID:</strong> {{this._id}}</p>
           <p><strong>Descripción:</strong> {{this.description}}</p>
           <p><strong>Código:</strong> {{this.code}}</p>
           <p><strong>Precio:</strong> ${{this.price}}</p>

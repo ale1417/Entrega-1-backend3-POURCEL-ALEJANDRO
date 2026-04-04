@@ -1,0 +1,40 @@
+<section>
+  <h2>Listado de productos</h2>
+
+  {{#if payload.length}}
+    <div class="grid">
+      {{#each payload}}
+        <article class="card">
+          <h3>{{this.title}}</h3>
+          <p><strong>Descripción:</strong> {{this.description}}</p>
+          <p><strong>Precio:</strong> ${{this.price}}</p>
+          <p><strong>Categoría:</strong> {{this.category}}</p>
+          <p><strong>Stock:</strong> {{this.stock}}</p>
+          <p><strong>Status:</strong> {{this.status}}</p>
+
+          <a href="/products/{{this._id}}">
+            <button>Ver detalle</button>
+          </a>
+        </article>
+      {{/each}}
+    </div>
+  {{else}}
+    <p>No hay productos para mostrar.</p>
+  {{/if}}
+
+  <div class="pagination">
+    {{#if hasPrevPage}}
+      <a href="{{prevLink}}">
+        <button>Anterior</button>
+      </a>
+    {{/if}}
+
+    <span>Página {{page}} de {{totalPages}}</span>
+
+    {{#if hasNextPage}}
+      <a href="{{nextLink}}">
+        <button>Siguiente</button>
+      </a>
+    {{/if}}
+  </div>
+</section>

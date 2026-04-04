@@ -1,0 +1,50 @@
+<section class="panel">
+  <h2>Detalle del producto</h2>
+
+  <article class="card">
+    <h3>{{product.title}}</h3>
+
+    <p><strong>ID:</strong> {{product._id}}</p>
+    <p><strong>Descripción:</strong> {{product.description}}</p>
+    <p><strong>Código:</strong> {{product.code}}</p>
+    <p><strong>Precio:</strong> ${{product.price}}</p>
+    <p><strong>Status:</strong> {{product.status}}</p>
+    <p><strong>Stock:</strong> {{product.stock}}</p>
+    <p><strong>Categoría:</strong> {{product.category}}</p>
+
+    {{#if product.thumbnails.length}}
+      <p><strong>Thumbnails:</strong></p>
+      <ul>
+        {{#each product.thumbnails}}
+          <li>{{this}}</li>
+        {{/each}}
+      </ul>
+    {{/if}}
+
+    <div id="message" class="message"></div>
+
+    <div class="detail-actions">
+      <button id="addToCartBtn" data-product-id="{{product._id}}">
+        Agregar al carrito
+      </button>
+
+      <a href="/products">
+        <button>Volver a productos</button>
+      </a>
+    </div>
+  </article>
+</section>
+
+<script>
+  const CART_ID = "69d136c7df2525c4bdac1bbe"; const addToCartBtn =
+  document.getElementById("addToCartBtn"); const messageBox =
+  document.getElementById("message"); function showMessage(text, ok = true) {
+  messageBox.textContent = text; messageBox.className = ok ? "message success" :
+  "message error"; } addToCartBtn.addEventListener("click", async () => { const
+  productId = addToCartBtn.dataset.productId; try { const response = await
+  fetch(`/api/carts/${CART_ID}/product/${productId}`, { method: "POST" }); const
+  data = await response.json(); if (!response.ok) { showMessage(data.detail ||
+  data.error || "Error al agregar al carrito", false); return; }
+  showMessage("Producto agregado al carrito correctamente"); } catch (error) {
+  showMessage("Error de conexión al agregar al carrito", false); } });
+</script>

@@ -1,0 +1,29 @@
+<section>
+  <h2>Detalle del carrito</h2>
+
+  {{#if cart.products.length}}
+    <div class="grid">
+      {{#each cart.products}}
+        <article class="card">
+          <h3>{{this.product.title}}</h3>
+          <p><strong>ID producto:</strong> {{this.product._id}}</p>
+          <p><strong>Descripción:</strong> {{this.product.description}}</p>
+          <p><strong>Código:</strong> {{this.product.code}}</p>
+          <p><strong>Precio:</strong> ${{this.product.price}}</p>
+          <p><strong>Categoría:</strong> {{this.product.category}}</p>
+          <p><strong>Status:</strong> {{this.product.status}}</p>
+          <p><strong>Stock:</strong> {{this.product.stock}}</p>
+          <p><strong>Cantidad:</strong> {{this.quantity}}</p>
+        </article>
+      {{/each}}
+    </div>
+  {{else}}
+    <p>El carrito no tiene productos.</p>
+  {{/if}}
+
+  <div class="detail-actions">
+    <a href="/products">
+      <button>Volver a productos</button>
+    </a>
+  </div>
+</section>
