@@ -1,4 +1,4 @@
-# 🚀 Proyecto Final - Programación Backend II
+# 🚀 Proyecto Backend - Entrega N°1 Backend III
 
 ## 🧑‍💻 Autor
 
@@ -8,11 +8,34 @@
 
 ## 📌 Descripción del Proyecto
 
-Este proyecto corresponde a la entrega final de **Programación Backend II - Coderhouse**.
+Este proyecto corresponde a la **Entrega N°1 de Programación Backend III - Coderhouse**.
 
-El objetivo fue profesionalizar el servidor ecommerce desarrollado durante el curso, incorporando autenticación, autorización por roles, patrón Repository, DAOs, DTOs, recuperación de contraseña por email, lógica de compra con tickets y una arquitectura más ordenada y escalable.
+El trabajo se realizó sobre el proyecto ecommerce desarrollado y aprobado en Backend II, manteniendo la arquitectura ya implementada con **DAO**, **Repository Pattern**, **DTO**, autenticación con **JWT**, autorización por roles, recuperación de contraseña y lógica de compra con tickets.
 
-El proyecto utiliza **Node.js**, **Express**, **MongoDB Atlas**, **Mongoose**, **Passport**, **JWT**, **Nodemailer**, **Handlebars** y **Socket.io**.
+En esta nueva entrega se incorporó un sistema de **mocking** para generar usuarios y mascotas de prueba, permitiendo tanto visualizar datos simulados como insertarlos directamente en MongoDB.
+
+---
+
+## 🎯 Objetivo de la Entrega
+
+La consigna solicita:
+
+- Crear un router llamado `mocks.router.js`.
+- Montar ese router bajo la ruta base `/api/mocks`.
+- Mover el endpoint `/mockingpets` dentro del router de mocks.
+- Crear un módulo de mocking para generar usuarios.
+- Generar usuarios según un parámetro numérico.
+- Los usuarios generados deben tener:
+  - contraseña `coder123` encriptada,
+  - role variable entre `user` y `admin`,
+  - campo `pets` como array vacío.
+
+- Crear un endpoint `GET /api/mocks/mockingusers`.
+- Generar 50 usuarios mock con formato similar al de MongoDB.
+- Crear un endpoint `POST /api/mocks/generateData`.
+- Recibir por body la cantidad de usuarios y mascotas a generar.
+- Insertar esos datos en MongoDB.
+- Comprobar los registros insertados mediante servicios `GET` de users y pets.
 
 ---
 
@@ -32,6 +55,7 @@ El proyecto utiliza **Node.js**, **Express**, **MongoDB Atlas**, **Mongoose**, *
 - Dotenv
 - Express Handlebars
 - Socket.io
+- @faker-js/faker
 
 ---
 
@@ -63,8 +87,12 @@ src/
 ├── middlewares/
 │   └── authorization.middleware.js
 │
+├── mocks/
+│   └── mocking.module.js
+│
 ├── models/
 │   ├── Cart.model.js
+│   ├── Pet.model.js
 │   ├── Product.model.js
 │   ├── Ticket.model.js
 │   └── User.model.js
@@ -77,8 +105,11 @@ src/
 │
 ├── routes/
 │   ├── carts.router.js
+│   ├── mocks.router.js
+│   ├── pets.router.js
 │   ├── products.router.js
 │   ├── sessions.router.js
+│   ├── users.router.js
 │   └── views.router.js
 │
 ├── public/
@@ -98,14 +129,15 @@ src/
 
 ## 🧱 Arquitectura Aplicada
 
-El proyecto fue organizado separando responsabilidades en distintas capas:
+El proyecto mantiene una arquitectura organizada por capas:
 
 - **Models:** esquemas de MongoDB.
 - **DAO:** acceso directo a la base de datos.
 - **Repositories:** capa intermedia entre la lógica de negocio y la persistencia.
 - **Managers:** lógica principal de productos y carritos.
 - **DTO:** control de datos expuestos al cliente.
-- **Middlewares:** control de autorización por roles.
+- **Middlewares:** autorización por roles.
+- **Mocks:** generación de datos simulados.
 - **Routes:** definición de endpoints.
 - **Config:** configuración de Passport y Nodemailer.
 
@@ -131,9 +163,273 @@ DAOs implementados:
 
 ---
 
+## 🧪 Sistema de Mocking
+
+Para esta entrega se creó un módulo de mocking utilizando `@faker-js/faker`.
+
+Archivo:
+
+```bash
+src/mocks/mocking.module.js
+```
+
+Este módulo permite generar:
+
+- Usuarios mockeados.
+- Mascotas mockeadas.
+
+---
+
+## 👤 Mocking de Usuarios
+
+Los usuarios generados tienen el siguiente formato:
+
+```js
+{
+  first_name: String,
+  last_name: String,
+  email: String,
+  age: Number,
+  password: String,
+  role: "user" | "admin",
+  pets: []
+}
+```
+
+Características principales:
+
+- La contraseña base es `coder123`.
+- La contraseña se guarda encriptada utilizando `bcrypt`.
+- El role puede variar entre `user` y `admin`.
+- El campo `pets` se genera como array vacío.
+- Los datos se generan con formato similar al que devuelve MongoDB.
+
+---
+
+## 🐾 Mocking de Mascotas
+
+Las mascotas generadas tienen el siguiente formato:
+
+```js
+{
+  name: String,
+  specie: String,
+  birthDate: Date,
+  adopted: Boolean,
+  owner: null
+}
+```
+
+---
+
+## 🐶 Modelo Pet
+
+Se agregó el modelo `Pet` para poder insertar mascotas en MongoDB.
+
+Archivo:
+
+```bash
+src/models/Pet.model.js
+```
+
+Campos principales:
+
+```js
+name;
+specie;
+birthDate;
+adopted;
+owner;
+```
+
+---
+
+## 👤 Actualización del Modelo User
+
+Se actualizó el modelo `User` agregando el campo `pets`.
+
+```js
+pets: {
+  type: Array,
+  default: [],
+}
+```
+
+De esta manera, los usuarios mockeados cumplen con la consigna de tener el campo `pets` como array vacío.
+
+---
+
+## 🔀 Router de Mocks
+
+Se creó el router:
+
+```bash
+src/routes/mocks.router.js
+```
+
+Y se montó bajo la ruta base:
+
+```http
+/api/mocks
+```
+
+---
+
+## 📌 Endpoints de Mocking
+
+### Generar mascotas mockeadas
+
+```http
+GET /api/mocks/mockingpets
+```
+
+Este endpoint genera mascotas de prueba y las devuelve como respuesta sin insertarlas en la base de datos.
+
+Respuesta esperada:
+
+```json
+{
+  "status": "success",
+  "payload": [
+    {
+      "name": "Archie",
+      "specie": "dog",
+      "birthDate": "2019-11-07T19:53:15.102Z",
+      "adopted": false,
+      "owner": null
+    }
+  ]
+}
+```
+
+---
+
+### Generar usuarios mockeados
+
+```http
+GET /api/mocks/mockingusers
+```
+
+Este endpoint genera 50 usuarios de prueba y los devuelve como respuesta sin insertarlos en la base de datos.
+
+Respuesta esperada:
+
+```json
+{
+  "status": "success",
+  "payload": [
+    {
+      "first_name": "Carl",
+      "last_name": "Altenwerth",
+      "email": "usuario@test.com",
+      "age": 45,
+      "password": "$2b$10$...",
+      "role": "admin",
+      "pets": []
+    }
+  ]
+}
+```
+
+---
+
+### Generar e insertar datos en MongoDB
+
+```http
+POST /api/mocks/generateData
+```
+
+Este endpoint recibe por body la cantidad de usuarios y mascotas a generar e insertar en MongoDB.
+
+Body de ejemplo:
+
+```json
+{
+  "users": 5,
+  "pets": 5
+}
+```
+
+Respuesta esperada:
+
+```json
+{
+  "status": "success",
+  "message": "Datos generados e insertados correctamente",
+  "payload": {
+    "users": 5,
+    "pets": 5
+  }
+}
+```
+
+---
+
+## 👥 Servicio GET de Users
+
+Para comprobar los usuarios insertados en MongoDB se agregó el endpoint:
+
+```http
+GET /api/users
+```
+
+Este endpoint devuelve los usuarios existentes en la base de datos.
+
+Respuesta esperada:
+
+```json
+{
+  "status": "success",
+  "payload": [
+    {
+      "_id": "id_del_usuario",
+      "first_name": "Alejandro",
+      "last_name": "Pourcel",
+      "email": "usuario@test.com",
+      "age": 22,
+      "password": "$2b$10$...",
+      "role": "admin",
+      "pets": []
+    }
+  ]
+}
+```
+
+---
+
+## 🐾 Servicio GET de Pets
+
+Para comprobar las mascotas insertadas en MongoDB se agregó el endpoint:
+
+```http
+GET /api/pets
+```
+
+Este endpoint devuelve las mascotas existentes en la base de datos.
+
+Respuesta esperada:
+
+```json
+{
+  "status": "success",
+  "payload": [
+    {
+      "_id": "id_de_la_mascota",
+      "name": "Archie",
+      "specie": "dog",
+      "birthDate": "2019-11-07T19:53:15.102Z",
+      "adopted": false,
+      "owner": null
+    }
+  ]
+}
+```
+
+---
+
 ## 🔐 Autenticación y Sesiones
 
-El sistema utiliza autenticación mediante **JWT** y **Passport JWT**.
+El proyecto conserva la autenticación implementada con **JWT** y **Passport JWT**.
 
 Al iniciar sesión, el servidor genera un token JWT y lo guarda en una cookie llamada:
 
@@ -142,30 +438,6 @@ jwtCookieToken
 ```
 
 La estrategia `current` valida al usuario autenticado mediante Passport.
-
----
-
-## 👤 Modelo de Usuario
-
-El modelo `User` incluye:
-
-```js
-first_name;
-last_name;
-email;
-age;
-password;
-cart;
-role;
-```
-
-La contraseña se almacena encriptada utilizando `bcrypt`.
-
-El campo `role` tiene por defecto el valor:
-
-```txt
-user
-```
 
 ---
 
@@ -206,22 +478,22 @@ Se implementó un middleware de autorización que limita el acceso según el rol
 
 Puede:
 
-- Crear productos
-- Actualizar productos
-- Eliminar productos
+- Crear productos.
+- Actualizar productos.
+- Eliminar productos.
 
 ### Rol user
 
 Puede:
 
-- Agregar productos a su carrito
-- Realizar compras
+- Agregar productos a su carrito.
+- Realizar compras.
 
 ---
 
 ## 🔑 Recuperación de Contraseña
 
-Se implementó un sistema de recuperación de contraseña con **Nodemailer**.
+El proyecto conserva el sistema de recuperación de contraseña con **Nodemailer**.
 
 Flujo:
 
@@ -243,7 +515,7 @@ POST /api/sessions/reset-password/:token
 
 ## 🎟️ Sistema de Tickets
 
-Se creó el modelo `Ticket` con los siguientes campos:
+Se conserva el modelo `Ticket` con los siguientes campos:
 
 ```js
 code;
@@ -339,6 +611,38 @@ POST /api/sessions/reset-password/:token
 
 ---
 
+## 🧪 Mocks
+
+### Endpoints
+
+```http
+GET  /api/mocks/mockingusers
+GET  /api/mocks/mockingpets
+POST /api/mocks/generateData
+```
+
+---
+
+## 👥 Users
+
+### Endpoints
+
+```http
+GET /api/users
+```
+
+---
+
+## 🐾 Pets
+
+### Endpoints
+
+```http
+GET /api/pets
+```
+
+---
+
 ## 🖥️ Vistas
 
 El proyecto conserva vistas con Handlebars:
@@ -353,11 +657,11 @@ GET /carts/:cid
 
 Incluye:
 
-- listado de productos
-- vista en tiempo real
-- detalle de producto
-- detalle de carrito
-- botón para agregar producto al carrito
+- listado de productos,
+- vista en tiempo real,
+- detalle de producto,
+- detalle de carrito,
+- botón para agregar producto al carrito.
 
 ---
 
@@ -385,8 +689,6 @@ GMAIL_PASS=tu_contraseña_de_aplicacion_gmail
 FRONT_URL=http://localhost:8080
 ```
 
-> Importante: no se deben compartir credenciales reales públicamente.
-
 ---
 
 ## 🚀 Instalación y Ejecución
@@ -394,7 +696,7 @@ FRONT_URL=http://localhost:8080
 ### 1. Clonar el repositorio
 
 ```bash
-git clone https://github.com/ale1417/Trabajo-final-backend2-POURCEL-ALEJANDRO.git
+git clone
 ```
 
 ### 2. Instalar dependencias
@@ -421,57 +723,86 @@ http://localhost:8080
 
 ---
 
-## ✅ Funcionalidades Implementadas
+## 🧪 Pruebas Realizadas en Postman
 
-- CRUD de productos
-- CRUD de carritos
-- MongoDB Atlas
-- Mongoose
-- Paginación de productos
-- Filtros y ordenamiento
-- Autenticación con JWT
-- Passport JWT
-- DTO para `/current`
-- Bcrypt para contraseñas
-- Roles `admin` y `user`
-- Middleware de autorización
-- DAO
-- Repository Pattern
-- Recuperación de contraseña por email
-- Token de recuperación con expiración de 1 hora
-- Validación para no reutilizar la contraseña anterior
-- Modelo Ticket
-- Endpoint de compra
-- Verificación de stock
-- Descuento automático de stock
-- Compra parcial
-- WebSockets
-- Vistas con Handlebars
+Se probaron correctamente los siguientes endpoints:
+
+```http
+GET  /api/mocks/mockingusers
+GET  /api/mocks/mockingpets
+POST /api/mocks/generateData
+GET  /api/users
+GET  /api/pets
+```
+
+También se verificó que:
+
+- Los usuarios mockeados se generan correctamente.
+- Las contraseñas se guardan encriptadas.
+- La contraseña base utilizada es `coder123`.
+- Los roles varían entre `user` y `admin`.
+- El campo `pets` se genera como array vacío.
+- Las mascotas mockeadas se generan correctamente.
+- Los usuarios se insertan correctamente en MongoDB.
+- Las mascotas se insertan correctamente en MongoDB.
+- Los datos insertados pueden consultarse mediante los servicios GET correspondientes.
 
 ---
 
-## 🧪 Pruebas Realizadas
+## ✅ Funcionalidades Implementadas
 
-Se probaron los siguientes flujos principales:
+### Backend II
 
-- Registro de usuario
-- Login
-- Current con DTO
-- Creación de productos como admin
-- Bloqueo de creación de productos para user
-- Agregado de productos al carrito como user
-- Compra de carrito
-- Generación de ticket
-- Descuento de stock
-- Recuperación de contraseña por email
-- Reset de contraseña
-- Bloqueo de reutilización de contraseña anterior
+- CRUD de productos.
+- CRUD de carritos.
+- MongoDB Atlas.
+- Mongoose.
+- Paginación de productos.
+- Filtros y ordenamiento.
+- Autenticación con JWT.
+- Passport JWT.
+- DTO para `/current`.
+- Bcrypt para contraseñas.
+- Roles `admin` y `user`.
+- Middleware de autorización.
+- DAO.
+- Repository Pattern.
+- Recuperación de contraseña por email.
+- Token de recuperación con expiración de 1 hora.
+- Validación para no reutilizar la contraseña anterior.
+- Modelo Ticket.
+- Endpoint de compra.
+- Verificación de stock.
+- Descuento automático de stock.
+- Compra parcial.
+- WebSockets.
+- Vistas con Handlebars.
+
+### Backend III - Entrega N°1
+
+- Router `mocks.router.js`.
+- Ruta base `/api/mocks`.
+- Endpoint `/mockingpets`.
+- Endpoint `/mockingusers`.
+- Módulo de mocking.
+- Generación de usuarios mockeados.
+- Generación de mascotas mockeadas.
+- Contraseña `coder123` encriptada.
+- Roles aleatorios entre `user` y `admin`.
+- Campo `pets` como array vacío.
+- Endpoint `/generateData`.
+- Inserción masiva de usuarios en MongoDB.
+- Inserción masiva de mascotas en MongoDB.
+- Servicio `GET /api/users`.
+- Servicio `GET /api/pets`.
 
 ---
 
 ## 🎯 Conclusión
 
-Este proyecto integra los principales conceptos vistos en Programación Backend II, aplicando una arquitectura más profesional, autenticación segura, autorización por roles, patrón Repository, DTOs, recuperación de contraseña por correo electrónico y lógica de compra con generación de tickets.
+Este proyecto integra los conceptos trabajados en Backend II y suma la primera entrega de Backend III, incorporando generación de datos mockeados, inserción masiva en base de datos y servicios de comprobación para usuarios y mascotas.
+
+Se mantiene una arquitectura organizada y escalable, utilizando DAO, Repository Pattern, DTO, autenticación con JWT, autorización por roles y conexión con MongoDB Atlas.
 
 ---
 
@@ -479,5 +810,5 @@ Este proyecto integra los principales conceptos vistos en Programación Backend 
 
 **Alejandro Pourcel**
 
-Proyecto Final - Programación Backend II
+Programación Backend III
 Coderhouse

@@ -32,6 +32,10 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: "user",
   },
+  pets: {
+    type: Array,
+    default: [],
+  },
 });
 
 export const UserModel = mongoose.model(userCollection, userSchema);

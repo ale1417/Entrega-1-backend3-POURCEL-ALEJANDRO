@@ -12,6 +12,10 @@ import productsRouter from "./routes/products.router.js";
 import cartsRouter from "./routes/carts.router.js";
 import viewsRouter from "./routes/views.router.js";
 import sessionsRouter from "./routes/sessions.router.js";
+import mocksRouter from "./routes/mocks.router.js";
+
+import usersRouter from "./routes/users.router.js";
+import petsRouter from "./routes/pets.router.js";
 
 import ProductManager from "./managers/ProductManager.js";
 import CartManager from "./managers/CartManager.js";
@@ -43,10 +47,13 @@ app.set("io", io);
 app.set("productManager", productManager);
 app.set("cartManager", cartManager);
 
-app.use("/", viewsRouter);
 app.use("/api/products", productsRouter);
 app.use("/api/carts", cartsRouter);
 app.use("/api/sessions", sessionsRouter);
+app.use("/api/mocks", mocksRouter);
+app.use("/api/users", usersRouter);
+app.use("/api/pets", petsRouter);
+app.use("/", viewsRouter);
 
 io.on("connection", async (socket) => {
   try {
