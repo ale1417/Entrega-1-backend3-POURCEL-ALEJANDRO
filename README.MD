@@ -696,7 +696,7 @@ FRONT_URL=http://localhost:8080
 ### 1. Clonar el repositorio
 
 ```bash
-git clone
+git clone https://github.com/ale1417/Entrega-1-backend3-POURCEL-ALEJANDRO.git
 ```
 
 ### 2. Instalar dependencias
